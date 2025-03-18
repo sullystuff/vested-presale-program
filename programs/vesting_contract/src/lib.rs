@@ -128,13 +128,14 @@ pub mod vesting_contract {
         }
         // check if we can claim any tokens
         let current_time = Clock::get()?.unix_timestamp as u64;
-        let time_since_last_claim = current_time.saturating_sub(vesting_account.last_claim);
-        let tick_time = (vesting_account.vesting_end - vesting_account.vesting_start) / vesting_account.vesting_ticks;
-        let can_claim = time_since_last_claim >= tick_time;
+        let time_since_last_claim: u64 = current_time.saturating_sub(vesting_account.last_claim);
+        let tick_time: u64 = vesting_account.vesting_end - vesting_account.vesting_start;
+        let can_claim = time_since_last_claim >= tick_time && current_time >= vesting_account.vesting_start;
         if !can_claim {
             return Err(VestingError::NotTimeToClaim.into());
         }
         // calculate the number of ticks we can claim
+        // MAKE SURE THIS ROUDNS DOWN
         let ticks_to_claim = time_since_last_claim / tick_time;
         let amount_to_claim = (vesting_account.total_amount * ticks_to_claim) / vesting_account.vesting_ticks;
         // update the vesting account
